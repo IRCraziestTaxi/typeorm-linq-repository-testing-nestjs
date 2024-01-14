@@ -1,42 +1,3 @@
-# typeorm-linq-repository-testing-nestjs
-Testing helpers for typeorm-linq-repository in a NestJS application.
-
-## Foreword
-This library is an extension of [typeorm-linq-repository-testing](https://github.com/IRCraziestTaxi/typeorm-linq-repository-testing) that makes testing [typeorm-linq-repository](https://github.com/IRCraziestTaxi/typeorm-linq-repository) in a NestJS application significantly easier.
-
-The sample tests in this repository make use of the CQRS pattern using `@nestjs/cqrs`, but you can adapt the test cases to your use case if you are doing something different.
-
-## Extending LinqRepositoryMockModule
-In order to use `LinqRepositoryMockModule`, you must extend it in your own module that imports and exports your application's repositories.
-
-`repositories-mock.module.ts`
-```ts
-import { Module } from "@nestjs/common";
-import { DataSource } from "typeorm";
-import { dataSourceMockFactory } from "typeorm-linq-repository-testing";
-import { LinqRepositoryMockModule } from "typeorm-linq-repository-testing-nestjs";
-import { appRepositories } from "../repositories";
-
-@Module({
-    providers: [
-        ...appRepositories,
-        {
-            provide: DataSource,
-            useFactory: dataSourceMockFactory
-        }
-    ],
-    exports: [
-        ...appRepositories
-    ]
-})
-export class RepositoriesMockModule extends LinqRepositoryMockModule {}
-```
-
-## Using your extended LinqRepositoryMockModule
-Import the module in your unit tests as follows:
-
-`add-artist.handler.spec.ts`
-```ts
 import { Test, TestingModule } from "@nestjs/testing";
 import { GenericResponse, Rejection } from "@responsekit/core";
 import { TsSimpleAutomapperModule } from "ts-simple-automapper-nestjs";
@@ -129,21 +90,3 @@ describe(nameof(AddArtistHandler), () => {
         expect(rejection.message).toBe("Invalid artist type ID.");
     });
 });
-```
-
-## MockLinqRepositoryReturnResultsController
-Notice the following line in the above code snippet:
-
-```ts
-const returnResultsController = new MockLinqRepositoryReturnResultsController<Artist>();
-```
-
-`MockLinqRepositoryReturnResultsController` is the crux of using this library. It allows you to tell your unit test cases what you expect from the repository for a given scenario and return different mock results based on each scenario.
-
-Note that, although the line setting up how to return results is the same in each test case:
-
-```ts
-returnResultsController.createComparerSequence(a => a.name === command.name);
-```
-
-Since `command.name` is different in each test case, each test case will receive the intended mocked entity from the mock repository given the scenario you are testing.
