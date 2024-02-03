@@ -147,3 +147,23 @@ returnResultsController.createComparerSequence(a => a.name === command.name);
 ```
 
 Since `command.name` is different in each test case, each test case will receive the intended mocked entity from the mock repository given the scenario you are testing.
+
+`MockLinqRepositoryReturnResultsController.createComparerSequence` takes a comma separated list of anonymous functions that will be used during the test case currently being executed. The order of comparer functions provided for the current usage of `createComparerSequence` is the order in which each instance of `getOne` or `getAll` is called on the mock repository during the code path being tested.
+
+A simple `getById` will not use this functionality; it simply returns the record passed in each mock repository's `records` array whose `id` (or equivalent configured property) property matches the argument provided to `getById`.
+
+When testing code that uses `getOne` or `getAll`, however, if you provided a `MockLinqRepositoryReturnResultsController` to the mock repository, then you must provide one comparer function per instance of `getOne` or `getAll` encountered during the code path being tested for the test case calling `createComparerSequence`. If no `MockLinqRepositoryReturnResultsController` was provided, then the mock repository will simply return the first record for `getOne` or all records for `getAll`.
+
+Therefore, if the code path being tested calls `getOne` or `getAll` with a `where` or similar defined, you must provide a `MockLinqRepositoryReturnResultsController` to the mock repository and you must provide a sequence of comparer functions whose length matches the number of times `getOne` and `getAll` are collectively called in the code path being tested.
+
+Note that the sample code above depicts a simple scenario in which `getOne` is only called once in the code being tested. If the repository being mocked in the code being tested has multiple instances of `getOne` and/or `getAll`, then more than one comparer function must be passed to `createComparerSequence`.
+
+```ts
+returnResultsController.createComparerSequence(
+    x => /* ... */,
+    x => /* ... */,
+    // ...
+);
+```
+
+If at any time `getOne` or `getAll` is called on the mock repository and not enough comparer functions were provided to `createComparerSequence`, an error will be thrown with the message `"Comparer function was not found."`. If `createComparerSequence` was not called for each test case where it is needed, then an error will be thrown with the message `"Comparer sequence was not found."`.
